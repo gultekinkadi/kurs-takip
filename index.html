@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎓 Kurs Takip</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: #1B3A5C;
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 700; }
+  header .subtitle { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+
+  .header-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-add    { background: #17A589; color: white; }
+  .btn-export { background: #2E6DA4; color: white; }
+  .btn-danger { background: #C0392B; color: white; }
+  .btn-sm     { padding: 4px 10px; font-size: 0.75rem; }
+
+  /* ── ÖZET KARTLARI ── */
+  .summary-bar {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    overflow-x: auto;
+  }
+  .summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px 18px;
+    min-width: 130px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border-left: 4px solid #2E6DA4;
+  }
+  .summary-card .label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-card .value { font-size: 1.4rem; font-weight: 700; color: #1B3A5C; margin-top: 2px; }
+  .summary-card.green  { border-left-color: #17A589; }
+  .summary-card.green .value { color: #17A589; }
+  .summary-card.orange { border-left-color: #E67E22; }
+  .summary-card.orange .value { color: #E67E22; }
+
+  /* ── KURS BLOK ── */
+  .courses-wrap {
+    display: flex;
+    gap: 16px;
+    padding: 0 24px 24px;
+    overflow-x: auto;
+    align-items: flex-start;
+  }
+
+  .course-block {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    min-width: 260px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .course-header {
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+  }
+  .course-header .name {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .course-header .person {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .course-header-actions { display: flex; gap: 6px; }
+
+  .course-stats {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #eee;
+  }
+  .stat-pill {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+    color: #555;
+    border-right: 1px solid #eee;
+  }
+  .stat-pill:last-child { border-right: none; }
+  .stat-pill strong { display: block; font-size: 1rem; color: #1B3A5C; }
+
+  /* Tablo */
+  .course-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .course-table thead th {
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #eee;
+  }
+  .course-table thead .th-tarih { text-align: left; padding-left: 12px; color: #555; }
+  .course-table thead .th-devam { color: #17A589; }
+  .course-table thead .th-odeme { color: #E67E22; }
+
+  .course-table tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.1s; }
+  .course-table tbody tr:hover { background: #fafafa; }
+  .course-table tbody tr.even { background: #f9fbfc; }
+  .course-table tbody tr.even:hover { background: #f0f4f8; }
+
+  .course-table td { padding: 6px; vertical-align: middle; }
+  .td-tarih { padding-left: 12px !important; }
+  .td-tarih input[type="date"] {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 0.8rem;
+    width: 130px;
+    color: #333;
+    background: transparent;
+  }
+  .td-tarih input[type="date"]:focus { outline: none; border-color: #2E6DA4; }
+
+  .td-check { text-align: center; }
+  .check-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 2px solid;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .check-btn.devam     { border-color: #17A589; color: #17A589; }
+  .check-btn.devam.on  { background: #17A589; color: white; }
+  .check-btn.odeme     { border-color: #E67E22; color: #E67E22; }
+  .check-btn.odeme.on  { background: #E67E22; color: white; }
+  .check-btn:hover     { transform: scale(1.15); }
+
+  .td-del { text-align: center; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .del-btn:hover { color: #C0392B; background: #fde8e8; }
+
+  .add-row-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-top: 1px solid #eee;
+    background: #f9f9f9;
+    color: #2E6DA4;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .add-row-btn:hover { background: #e8f0fb; }
+
+  /* ── KURS EKLE MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 14px;
+    padding: 28px;
+    width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .modal h2 { font-size: 1.1rem; color: #1B3A5C; margin-bottom: 18px; }
+  .modal label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: 7px;
+    font-size: 0.9rem;
+  }
+  .modal input:focus, .modal select:focus { outline: none; border-color: #2E6DA4; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions .btn { flex: 1; padding: 10px; }
+  .btn-cancel { background: #eee; color: #555; }
+
+  /* Renk seçici */
+  .color-options { display: flex; gap: 8px; margin-top: 6px; }
+  .color-opt {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .color-opt.selected { border-color: #333; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1B3A5C;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.25s;
+    z-index: 300;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: #999;
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    .courses-wrap { flex-direction: column; }
+    .course-block { min-width: unset; }
+    header h1 { font-size: 1rem; }
+    .summary-bar { gap: 8px; padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <h1>🎓 Kurs Takip</h1>
+    <div class="subtitle">Devam & Ödeme Sistemi</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-export" onclick="exportCSV()">⬇️ CSV</button>
+    <button class="btn btn-add" onclick="openModal()">＋ Kurs Ekle</button>
+  </div>
+</header>
+
+<!-- ÖZET -->
+<div class="summary-bar" id="summaryBar"></div>
+
+<!-- KURSLAR -->
+<div class="courses-wrap" id="coursesWrap">
+  <div class="empty-state" id="emptyState">
+    <div class="icon">📚</div>
+    <p>Henüz kurs yok.<br>Sağ üstten <strong>+ Kurs Ekle</strong> butonuna tıklayın.</p>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">➕ Yeni Kurs</h2>
+    <label>Kurs Adı</label>
+    <input type="text" id="inp_name" placeholder="ör. İngilizce, Yoga...">
+    <label>Kişi</label>
+    <input type="text" id="inp_person" placeholder="ör. Ben, Ayşe...">
+    <label>Renk</label>
+    <div class="color-options" id="colorOptions"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">İptal</button>
+      <button class="btn btn-add" onclick="saveCourse()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── VERİ MODELİ ──────────────────────────────────────────────────────────────
+const COLORS = [
+  { bg: '#2E6DA4', light: '#D6E8F7' },
+  { bg: '#17A589', light: '#D5F5E3' },
+  { bg: '#8E44AD', light: '#F5EEF8' },
+  { bg: '#C0392B', light: '#FADBD8' },
+  { bg: '#E67E22', light: '#FDEBD0' },
+  { bg: '#1B3A5C', light: '#D6E4F0' },
+];
+
+let data = load();
+let editingId = null;
+let selectedColor = 0;
+
+function load() {
+  try {
+    return JSON.parse(localStorage.getItem('kurs_takip_v2') || 'null') || defaultData();
+  } catch { return defaultData(); }
+}
+
+function defaultData() {
+  return {
+    courses: [
+      { id: uid(), name: 'At',        person: 'Çocuk', color: 0, rows: [newRow()] },
+      { id: uid(), name: 'Kodlama',   person: 'Çocuk', color: 1, rows: [newRow()] },
+      { id: uid(), name: 'Oryantring',person: 'Çocuk', color: 4, rows: [newRow()] },
+      { id: uid(), name: 'Boks',      person: 'Ben',   color: 3, rows: [newRow()] },
+    ]
+  };
+}
+
+function save() {
+  localStorage.setItem('kurs_takip_v2', JSON.stringify(data));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function newRow() {
+  return { id: uid(), tarih: '', devam: false, odeme: false };
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  save();
+  renderSummary();
+  renderCourses();
+}
+
+function renderSummary() {
+  const bar = document.getElementById('summaryBar');
+  const courses = data.courses;
+  let totalDevam = 0, totalOdeme = 0, totalDers = 0;
+  courses.forEach(c => {
+    c.rows.forEach(r => {
+      if (r.tarih) { totalDers++; }
+      if (r.devam) totalDevam++;
+      if (r.odeme) totalOdeme++;
+    });
+  });
+  const pct = totalDers > 0 ? Math.round(totalDevam / totalDers * 100) : 0;
+
+  bar.innerHTML = `
+    <div class="summary-card">
+      <div class="label">Kurs Sayısı</div>
+      <div class="value">${courses.length}</div>
+    </div>
+    <div class="summary-card green">
+      <div class="label">Toplam Devam</div>
+      <div class="value">${totalDevam}</div>
+    </div>
+    <div class="summary-card orange">
+      <div class="label">Toplam Ödeme</div>
+      <div class="value">${totalOdeme}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Devam %</div>
+      <div class="value">${pct}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Toplam Ders</div>
+      <div class="value">${totalDers}</div>
+    </div>
+  `;
+}
+
+function renderCourses() {
+  const wrap = document.getElementById('coursesWrap');
+  const empty = document.getElementById('emptyState');
+
+  if (data.courses.length === 0) {
+    wrap.innerHTML = '';
+    wrap.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Mevcut blokları koru, sadece güncelle
+  // Basitlik için tam yeniden render
+  wrap.innerHTML = '';
+
+  data.courses.forEach(course => {
+    const col = COLORS[course.color] || COLORS[0];
+    const devamCount = course.rows.filter(r => r.devam).length;
+    const odemeCount = course.rows.filter(r => r.odeme).length;
+    const dersCount  = course.rows.filter(r => r.tarih).length;
+    const pct = dersCount > 0 ? Math.round(devamCount / dersCount * 100) : 0;
+
+    const block = document.createElement('div');
+    block.className = 'course-block';
+    block.dataset.id = course.id;
+
+    block.innerHTML = `
+      <div class="course-header" style="background:${col.bg}">
+        <div>
+          <div class="name">${esc(course.name)}</div>
+          <div class="person">${esc(course.person)}</div>
+        </div>
+        <div class="course-header-actions">
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border:none"
+            onclick="editCourse('${course.id}')">✏️</button>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border:none"
+            onclick="deleteCourse('${course.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="course-stats">
+        <div class="stat-pill"><strong>${dersCount}</strong>Ders</div>
+        <div class="stat-pill"><strong style="color:#17A589">${devamCount}</strong>Devam</div>
+        <div class="stat-pill"><strong style="color:#E67E22">${odemeCount}</strong>Ödeme</div>
+        <div class="stat-pill"><strong>${pct}%</strong>Oran</div>
+      </div>
+      <table class="course-table">
+        <thead>
+          <tr>
+            <th class="th-tarih">📅 Tarih</th>
+            <th class="th-devam">✅</th>
+            <th class="th-odeme">💳</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody_${course.id}">
+        </tbody>
+      </table>
+      <button class="add-row-btn" onclick="addRow('${course.id}')">＋ Ders Ekle</button>
+    `;
+
+    wrap.appendChild(block);
+    renderRows(course);
+  });
+}
+
+function renderRows(course) {
+  const tbody = document.getElementById(`tbody_${course.id}`);
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  course.rows.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = idx % 2 === 0 ? 'even' : '';
+
+    tr.innerHTML = `
+      <td class="td-tarih">
+        <input type="date" value="${row.tarih}"
+          onchange="setTarih('${course.id}','${row.id}',this.value)">
+      </td>
+      <td class="td-check">
+        <button class="check-btn devam ${row.devam ? 'on' : ''}"
+          onclick="toggle('${course.id}','${row.id}','devam')">✓</button>
+      </td>
+      <td class="td-check">
+        <button class="check-btn odeme ${row.odeme ? 'on' : ''}"
+          onclick="toggle('${course.id}','${row.id}','odeme')">₺</button>
+      </td>
+      <td class="td-del">
+        <button class="del-btn" onclick="deleteRow('${course.id}','${row.id}')">✕</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── AKSİYONLAR ───────────────────────────────────────────────────────────────
+function toggle(cid, rid, field) {
+  const course = data.courses.find(c => c.id === cid);
+  const row    = course.rows.find(r => r.id === rid);
+  row[field] = !row[field];
+  render();
+}
+
+function setTarih(cid, rid, val) {
+  const course = data.courses.find(c => c.id === cid);
+  const row    = course.rows.find(r => r.id === rid);
+  row.tarih = val;
+  save();
+  renderSummary();
+  // Sadece stat kısmını güncelle
+  const devamCount = course.rows.filter(r => r.devam).length;
+  const odemeCount = course.rows.filter(r => r.odeme).length;
+  const dersCount  = course.rows.filter(r => r.tarih).length;
+  const pct = dersCount > 0 ? Math.round(devamCount / dersCount * 100) : 0;
+  const block = document.querySelector(`.course-block[data-id="${cid}"]`);
+  if (block) {
+    const pills = block.querySelectorAll('.stat-pill strong');
+    if (pills[0]) pills[0].textContent = dersCount;
+    if (pills[3]) pills[3].textContent = pct + '%';
+  }
+}
+
+function addRow(cid) {
+  const course = data.courses.find(c => c.id === cid);
+  course.rows.push(newRow());
+  render();
+}
+
+function deleteRow(cid, rid) {
+  const course = data.courses.find(c => c.id === cid);
+  if (course.rows.length === 1) { toast('En az 1 satır olmalı'); return; }
+  course.rows = course.rows.filter(r => r.id !== rid);
+  render();
+}
+
+function deleteCourse(cid) {
+  if (!confirm('Bu kursu silmek istediğinize emin misiniz?')) return;
+  data.courses = data.courses.filter(c => c.id !== cid);
+  render();
+  toast('Kurs silindi');
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function buildColorPicker() {
+  const el = document.getElementById('colorOptions');
+  el.innerHTML = '';
+  COLORS.forEach((c, i) => {
+    const d = document.createElement('div');
+    d.className = 'color-opt' + (i === selectedColor ? ' selected' : '');
+    d.style.background = c.bg;
+    d.onclick = () => { selectedColor = i; buildColorPicker(); };
+    el.appendChild(d);
+  });
+}
+
+function openModal(cid) {
+  editingId = cid || null;
+  selectedColor = 0;
+  document.getElementById('modalTitle').textContent = cid ? '✏️ Kursu Düzenle' : '➕ Yeni Kurs';
+
+  if (cid) {
+    const c = data.courses.find(x => x.id === cid);
+    document.getElementById('inp_name').value   = c.name;
+    document.getElementById('inp_person').value = c.person;
+    selectedColor = c.color;
+  } else {
+    document.getElementById('inp_name').value   = '';
+    document.getElementById('inp_person').value = '';
+  }
+  buildColorPicker();
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('inp_name').focus(), 100);
+}
+
+function editCourse(cid) { openModal(cid); }
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingId = null;
+}
+
+function saveCourse() {
+  const name   = document.getElementById('inp_name').value.trim();
+  const person = document.getElementById('inp_person').value.trim();
+  if (!name) { alert('Kurs adı boş olamaz'); return; }
+
+  if (editingId) {
+    const c = data.courses.find(x => x.id === editingId);
+    c.name   = name;
+    c.person = person;
+    c.color  = selectedColor;
+    toast('Kurs güncellendi ✓');
+  } else {
+    data.courses.push({
+      id: uid(), name, person,
+      color: selectedColor,
+      rows: [newRow(), newRow(), newRow()]
+    });
+    toast('Kurs eklendi ✓');
+  }
+  closeModal();
+  render();
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  let csv = 'Kurs,Kişi,Tarih,Devam,Ödeme\n';
+  data.courses.forEach(c => {
+    c.rows.forEach(r => {
+      if (r.tarih || r.devam || r.odeme) {
+        csv += `"${c.name}","${c.person}","${r.tarih}","${r.devam ? 'Evet' : 'Hayır'}","${r.odeme ? 'Evet' : 'Hayır'}"\n`;
+      }
+    });
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'kurs_takip.csv';
+  a.click();
+  toast('CSV indirildi ✓');
+}
+
+// ── YARDIMCI ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Escape tuşu modal kapat
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── BAŞLAT ───────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
