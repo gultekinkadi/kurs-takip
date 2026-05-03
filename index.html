@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kurs Takip</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+header {
+  background: #1B3A5C; color: white;
+  padding: 14px 20px; display: flex;
+  align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+header h1 { font-size: 1.1rem; }
+header small { opacity: 0.7; font-size: 0.72rem; display: block; margin-top: 2px; }
+
+.hbtn {
+  padding: 7px 13px; border: none; border-radius: 6px;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer; margin-left: 6px;
+}
+.hbtn-green  { background: #17A589; color: white; }
+.hbtn-blue   { background: #2E6DA4; color: white; }
+
+/* ÖZET */
+.ozet {
+  display: flex; gap: 10px; padding: 14px 16px; overflow-x: auto;
+}
+.ozet-kart {
+  background: white; border-radius: 10px; padding: 10px 16px;
+  min-width: 110px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  border-left: 4px solid #2E6DA4;
+}
+.ozet-kart.y { border-left-color: #17A589; }
+.ozet-kart.t { border-left-color: #E67E22; }
+.ozet-kart .lbl { font-size: 0.68rem; color: #888; text-transform: uppercase; }
+.ozet-kart .val { font-size: 1.3rem; font-weight: 700; color: #1B3A5C; }
+.ozet-kart.y .val { color: #17A589; }
+.ozet-kart.t .val { color: #E67E22; }
+
+/* KURSLAR */
+.kurslar { display: flex; gap: 14px; padding: 0 16px 24px; overflow-x: auto; align-items: flex-start; }
+
+.kblok {
+  background: white; border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+  min-width: 270px; flex: 1; overflow: hidden;
+}
+.kblok-header {
+  padding: 11px 14px; color: white;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.kblok-header .kadi { font-weight: 700; font-size: 1rem; }
+.kblok-header .kisi { font-size: 0.72rem; opacity: 0.85; }
+.kblok-header-btns { display: flex; gap: 5px; }
+.kblok-header-btns button {
+  background: rgba(255,255,255,0.2); border: none; color: white;
+  border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 0.8rem;
+}
+
+.kstat { display: flex; border-bottom: 1px solid #eee; }
+.kstat-item { flex: 1; text-align: center; padding: 7px 2px; font-size: 0.72rem; color: #666; border-right: 1px solid #eee; }
+.kstat-item:last-child { border-right: none; }
+.kstat-item strong { display: block; font-size: 0.95rem; color: #1B3A5C; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead th {
+  padding: 7px 5px; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; border-bottom: 2px solid #eee; color: #555;
+}
+thead .th-d { color: #17A589; }
+thead .th-o { color: #E67E22; }
+tbody tr { border-bottom: 1px solid #f2f2f2; }
+tbody tr.alt { background: #f8fbfc; }
+td { padding: 5px; vertical-align: middle; }
+.td-tarih { padding-left: 10px; }
+.td-tarih input {
+  border: 1px solid #ddd; border-radius: 4px;
+  padding: 3px 5px; font-size: 0.78rem; width: 120px; color: #333;
+}
+.td-c { text-align: center; }
+.cbtn {
+  width: 28px; height: 28px; border-radius: 6px; border: 2px solid;
+  background: transparent; cursor: pointer; font-size: 0.9rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.cbtn.d     { border-color: #17A589; color: #17A589; }
+.cbtn.d.on  { background: #17A589; color: white; }
+.cbtn.o     { border-color: #E67E22; color: #E67E22; }
+.cbtn.o.on  { background: #E67E22; color: white; }
+.delbtn {
+  background: none; border: none; color: #ddd; cursor: pointer;
+  font-size: 0.85rem; padding: 3px 6px; border-radius: 4px;
+}
+.delbtn:hover { color: #e74c3c; background: #fde8e8; }
+
+.ekle-btn {
+  width: 100%; padding: 9px; border: none; border-top: 1px solid #eee;
+  background: #f9f9f9; color: #2E6DA4; font-size: 0.82rem;
+  font-weight: 700; cursor: pointer;
+}
+.ekle-btn:hover { background: #e8f0fb; }
+
+/* MODAL */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45); z-index: 200;
+  align-items: center; justify-content: center;
+}
+.modal-bg.ac { display: flex; }
+.modal {
+  background: white; border-radius: 14px; padding: 26px;
+  width: 340px; max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+.modal h2 { color: #1B3A5C; font-size: 1rem; margin-bottom: 16px; }
+.modal label { display: block; font-size: 0.78rem; font-weight: 700; color: #666; margin: 10px 0 3px; }
+.modal input, .modal select {
+  width: 100%; padding: 8px 10px; border: 1.5px solid #ddd;
+  border-radius: 7px; font-size: 0.88rem;
+}
+.renkler { display: flex; gap: 8px; margin-top: 6px; }
+.renk-opt {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 3px solid transparent; cursor: pointer;
+}
+.renk-opt.sec { border-color: #222; }
+.modal-btns { display: flex; gap: 8px; margin-top: 18px; }
+.modal-btns button { flex: 1; padding: 9px; border: none; border-radius: 7px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.mbtn-iptal { background: #eee; color: #555; }
+.mbtn-kaydet { background: #17A589; color: white; }
+
+.bos {
+  text-align: center; padding: 50px 20px; color: #aaa;
+}
+.bos .ikon { font-size: 2.5rem; margin-bottom: 10px; }
+
+@media(max-width:600px) {
+  .kurslar { flex-direction: column; }
+  .kblok { min-width: unset; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🎓 Kurs Takip</h1>
+    <small>Devam &amp; Ödeme Sistemi</small>
+  </div>
+  <div>
+    <button class="hbtn hbtn-blue" onclick="csvIndir()">⬇ CSV</button>
+    <button class="hbtn hbtn-green" onclick="modalAc()">＋ Kurs Ekle</button>
+  </div>
+</header>
+
+<div class="ozet" id="ozet"></div>
+<div class="kurslar" id="kurslar"></div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalBaslik">➕ Yeni Kurs</h2>
+    <label>Kurs Adı</label>
+    <input type="text" id="mAd" placeholder="ör. İngilizce, Yoga...">
+    <label>Kişi</label>
+    <input type="text" id="mKisi" placeholder="ör. Ben, Çocuk...">
+    <label>Renk</label>
+    <div class="renkler" id="renkler"></div>
+    <div class="modal-btns">
+      <button class="mbtn-iptal" onclick="modalKapat()">İptal</button>
+      <button class="mbtn-kaydet" onclick="kaydet()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── RENKLER
+const RENKLER = ['#2E6DA4','#17A589','#8E44AD','#E67E22','#C0392B','#1B3A5C'];
+const ACIKLAR = ['#D6E8F7','#D5F5E3','#F5EEF8','#FDEBD0','#FADBD8','#D6E4F0'];
+
+// ── VERİ
+function yukle() {
+  try {
+    var d = JSON.parse(localStorage.getItem('kt3') || 'null');
+    return d || baslaVeri();
+  } catch(e) { return baslaVeri(); }
+}
+function baslaVeri() {
+  return { kurslar: [
+    { id: yeniId(), ad: 'At',         kisi: 'Çocuk', renk: 1, satirlar: [yeniSatir(), yeniSatir(), yeniSatir()] },
+    { id: yeniId(), ad: 'Kodlama',    kisi: 'Çocuk', renk: 0, satirlar: [yeniSatir(), yeniSatir(), yeniSatir()] },
+    { id: yeniId(), ad: 'Oryantring', kisi: 'Çocuk', renk: 3, satirlar: [yeniSatir(), yeniSatir(), yeniSatir()] },
+    { id: yeniId(), ad: 'Boks',       kisi: 'Ben',   renk: 4, satirlar: [yeniSatir(), yeniSatir(), yeniSatir()] },
+  ]};
+}
+function kayit() { localStorage.setItem('kt3', JSON.stringify(veri)); }
+function yeniId() { return 'k' + Date.now() + Math.floor(Math.random()*9999); }
+function yeniSatir() { return { id: yeniId(), tarih: '', devam: false, odeme: false }; }
+
+var veri = yukle();
+var duzId = null;
+var secRenk = 0;
+
+// ── ÖZET
+function ozetiCiz() {
+  var topDevam=0, topOdeme=0, topDers=0;
+  veri.kurslar.forEach(function(k) {
+    k.satirlar.forEach(function(s) {
+      if(s.tarih) topDers++;
+      if(s.devam) topDevam++;
+      if(s.odeme) topOdeme++;
+    });
+  });
+  var pct = topDers > 0 ? Math.round(topDevam/topDers*100) : 0;
+  document.getElementById('ozet').innerHTML =
+    '<div class="ozet-kart"><div class="lbl">Kurs</div><div class="val">'+veri.kurslar.length+'</div></div>' +
+    '<div class="ozet-kart y"><div class="lbl">Devam</div><div class="val">'+topDevam+'</div></div>' +
+    '<div class="ozet-kart t"><div class="lbl">Ödeme</div><div class="val">'+topOdeme+'</div></div>' +
+    '<div class="ozet-kart"><div class="lbl">Oran</div><div class="val">'+pct+'%</div></div>' +
+    '<div class="ozet-kart"><div class="lbl">Ders</div><div class="val">'+topDers+'</div></div>';
+}
+
+// ── KURSLAR
+function hepsiniCiz() {
+  ozetiCiz();
+  var wrap = document.getElementById('kurslar');
+  wrap.innerHTML = '';
+
+  if(veri.kurslar.length === 0) {
+    wrap.innerHTML = '<div class="bos"><div class="ikon">📚</div><p>Kurs yok.<br>Sağ üstten <b>+ Kurs Ekle</b> tıklayın.</p></div>';
+    return;
+  }
+
+  veri.kurslar.forEach(function(k) { wrap.appendChild(kursBlogu(k)); });
+}
+
+function kursBlogu(k) {
+  var bg = RENKLER[k.renk] || RENKLER[0];
+  var devam = k.satirlar.filter(function(s){return s.devam;}).length;
+  var odeme = k.satirlar.filter(function(s){return s.odeme;}).length;
+  var ders  = k.satirlar.filter(function(s){return s.tarih;}).length;
+  var pct   = ders > 0 ? Math.round(devam/ders*100) : 0;
+
+  var div = document.createElement('div');
+  div.className = 'kblok';
+  div.id = 'blok_' + k.id;
+
+  div.innerHTML =
+    '<div class="kblok-header" style="background:'+bg+'">' +
+      '<div><div class="kadi">'+gv(k.ad)+'</div><div class="kisi">'+gv(k.kisi)+'</div></div>' +
+      '<div class="kblok-header-btns">' +
+        '<button onclick="modalAc(\''+k.id+'\')">✏️</button>' +
+        '<button onclick="kursSil(\''+k.id+'\')">🗑</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="kstat" id="stat_'+k.id+'">' +
+      '<div class="kstat-item"><strong>'+ders+'</strong>Ders</div>' +
+      '<div class="kstat-item"><strong style="color:#17A589">'+devam+'</strong>Devam</div>' +
+      '<div class="kstat-item"><strong style="color:#E67E22">'+odeme+'</strong>Ödeme</div>' +
+      '<div class="kstat-item"><strong>'+pct+'%</strong>Oran</div>' +
+    '</div>' +
+    '<table>' +
+      '<thead><tr>' +
+        '<th style="text-align:left;padding-left:10px">📅 Tarih</th>' +
+        '<th class="th-d">✅</th>' +
+        '<th class="th-o">💳</th>' +
+        '<th></th>' +
+      '</tr></thead>' +
+      '<tbody id="tbody_'+k.id+'"></tbody>' +
+    '</table>' +
+    '<button class="ekle-btn" onclick="satirEkle(\''+k.id+'\')">＋ Ders Ekle</button>';
+
+  // Satırları ekle
+  k.satirlar.forEach(function(s, i) {
+    div.querySelector('#tbody_'+k.id).appendChild(satirEl(k.id, s, i));
+  });
+
+  return div;
+}
+
+function satirEl(kid, s, idx) {
+  var tr = document.createElement('tr');
+  if(idx % 2 === 1) tr.className = 'alt';
+  tr.id = 'satir_' + s.id;
+
+  var tarihInput = document.createElement('input');
+  tarihInput.type = 'date';
+  tarihInput.value = s.tarih || '';
+  tarihInput.onchange = function() { tarihAyarla(kid, s.id, this.value); };
+
+  var tarihTd = document.createElement('td');
+  tarihTd.className = 'td-tarih';
+  tarihTd.appendChild(tarihInput);
+
+  var devamBtn = document.createElement('button');
+  devamBtn.className = 'cbtn d' + (s.devam ? ' on' : '');
+  devamBtn.textContent = '✓';
+  devamBtn.onclick = function() { tikle(kid, s.id, 'devam', this); };
+
+  var devamTd = document.createElement('td');
+  devamTd.className = 'td-c';
+  devamTd.appendChild(devamBtn);
+
+  var odemeBtn = document.createElement('button');
+  odemeBtn.className = 'cbtn o' + (s.odeme ? ' on' : '');
+  odemeBtn.textContent = '₺';
+  odemeBtn.onclick = function() { tikle(kid, s.id, 'odeme', this); };
+
+  var odemeTd = document.createElement('td');
+  odemeTd.className = 'td-c';
+  odemeTd.appendChild(odemeBtn);
+
+  var delBtn = document.createElement('button');
+  delBtn.className = 'delbtn';
+  delBtn.textContent = '✕';
+  delBtn.onclick = function() { satirSil(kid, s.id); };
+
+  var delTd = document.createElement('td');
+  delTd.className = 'td-c';
+  delTd.appendChild(delBtn);
+
+  tr.appendChild(tarihTd);
+  tr.appendChild(devamTd);
+  tr.appendChild(odemeTd);
+  tr.appendChild(delTd);
+  return tr;
+}
+
+// ── AKSİYONLAR
+function tikle(kid, sid, alan, btn) {
+  var k = veri.kurslar.find(function(x){return x.id===kid;});
+  var s = k.satirlar.find(function(x){return x.id===sid;});
+  s[alan] = !s[alan];
+  if(s[alan]) btn.classList.add('on');
+  else btn.classList.remove('on');
+  kayit();
+  statGuncelle(k);
+  ozetiCiz();
+}
+
+function tarihAyarla(kid, sid, val) {
+  var k = veri.kurslar.find(function(x){return x.id===kid;});
+  var s = k.satirlar.find(function(x){return x.id===sid;});
+  s.tarih = val;
+  kayit();
+  statGuncelle(k);
+  ozetiCiz();
+}
+
+function statGuncelle(k) {
+  var devam = k.satirlar.filter(function(s){return s.devam;}).length;
+  var odeme = k.satirlar.filter(function(s){return s.odeme;}).length;
+  var ders  = k.satirlar.filter(function(s){return s.tarih;}).length;
+  var pct   = ders > 0 ? Math.round(devam/ders*100) : 0;
+  var el = document.getElementById('stat_'+k.id);
+  if(!el) return;
+  el.innerHTML =
+    '<div class="kstat-item"><strong>'+ders+'</strong>Ders</div>' +
+    '<div class="kstat-item"><strong style="color:#17A589">'+devam+'</strong>Devam</div>' +
+    '<div class="kstat-item"><strong style="color:#E67E22">'+odeme+'</strong>Ödeme</div>' +
+    '<div class="kstat-item"><strong>'+pct+'%</strong>Oran</div>';
+}
+
+function satirEkle(kid) {
+  var k = veri.kurslar.find(function(x){return x.id===kid;});
+  var s = yeniSatir();
+  k.satirlar.push(s);
+  kayit();
+  var tbody = document.getElementById('tbody_'+kid);
+  var idx = k.satirlar.length - 1;
+  var tr = satirEl(kid, s, idx);
+  tbody.appendChild(tr);
+  tr.querySelector('input').focus();
+}
+
+function satirSil(kid, sid) {
+  var k = veri.kurslar.find(function(x){return x.id===kid;});
+  if(k.satirlar.length <= 1) { alert('En az 1 satır olmalı!'); return; }
+  k.satirlar = k.satirlar.filter(function(s){return s.id!==sid;});
+  kayit();
+  var tr = document.getElementById('satir_'+sid);
+  if(tr) tr.remove();
+  statGuncelle(k);
+  
+}
+
+function kursSil(kid) {
+  if(!confirm('Bu kursu silmek istediğinize emin misiniz?')) return;
+  veri.kurslar = veri.kurslar.filter(function(k){return k.id!==kid;});
+  kayit();
+  var blok = document.getElementById('blok_'+kid);
+  if(blok) blok.remove();
+  ozetiCiz();
+}
+
+// ── MODAL
+function renklerCiz() {
+  var el = document.getElementById('renkler');
+  el.innerHTML = '';
+  RENKLER.forEach(function(r, i) {
+    var d = document.createElement('div');
+    d.className = 'renk-opt' + (i===secRenk?' sec':'');
+    d.style.background = r;
+    d.onclick = function() { secRenk=i; renklerCiz(); };
+    el.appendChild(d);
+  });
+}
+
+function modalAc(kid) {
+  duzId = kid || null;
+  secRenk = 0;
+  document.getElementById('modalBaslik').textContent = kid ? '✏️ Kursu Düzenle' : '➕ Yeni Kurs';
+  if(kid) {
+    var k = veri.kurslar.find(function(x){return x.id===kid;});
+    document.getElementById('mAd').value = k.ad;
+    document.getElementById('mKisi').value = k.kisi;
+    secRenk = k.renk;
+  } else {
+    document.getElementById('mAd').value = '';
+    document.getElementById('mKisi').value = '';
+  }
+  renklerCiz();
+  document.getElementById('modalBg').classList.add('ac');
+  setTimeout(function(){ document.getElementById('mAd').focus(); }, 100);
+}
+
+function modalKapat() {
+  document.getElementById('modalBg').classList.remove('ac');
+  duzId = null;
+}
+
+function kaydet() {
+  var ad = document.getElementById('mAd').value.trim();
+  if(!ad) { alert('Kurs adı boş olamaz!'); return; }
+  var kisi = document.getElementById('mKisi').value.trim();
+  if(duzId) {
+    var k = veri.kurslar.find(function(x){return x.id===duzId;});
+    k.ad = ad; k.kisi = kisi; k.renk = secRenk;
+    kayit();
+    // Başlık ve rengi güncelle
+    var blok = document.getElementById('blok_'+duzId);
+    if(blok) {
+      blok.querySelector('.kblok-header').style.background = RENKLER[secRenk];
+      blok.querySelector('.kadi').textContent = ad;
+      blok.querySelector('.kisi').textContent = kisi;
+    }
+  } else {
+    var yeniK = { id: yeniId(), ad: ad, kisi: kisi, renk: secRenk,
+                  satirlar: [yeniSatir(), yeniSatir(), yeniSatir()] };
+    veri.kurslar.push(yeniK);
+    kayit();
+    document.getElementById('kurslar').appendChild(kursBlogu(yeniK));
+  }
+  modalKapat();
+  ozetiCiz();
+}
+
+// ── CSV
+function csvIndir() {
+  var csv = '\uFEFFKurs,Kişi,Tarih,Devam,Ödeme\n';
+  veri.kurslar.forEach(function(k) {
+    k.satirlar.forEach(function(s) {
+      if(s.tarih || s.devam || s.odeme)
+        csv += '"'+k.ad+'","'+k.kisi+'","'+s.tarih+'","'+(s.devam?'Evet':'Hayır')+'","'+(s.odeme?'Evet':'Hayır')+'"\n';
+    });
+  });
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'kurs_takip.csv';
+  a.click();
+}
+
+// ── YARDIMCI
+function gv(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('modalBg').onclick = function(e) {
+  if(e.target === this) modalKapat();
+};
+document.onkeydown = function(e) { if(e.key==='Escape') modalKapat(); };
+
+hepsiniCiz();
+</script>
+</body>
+</html>
